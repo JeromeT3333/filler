@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoDetect Template Filler - Vercel Hosted</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0e17;color:#e2e8f0;min-height:100vh;line-height:1.5}
+.container{max-width:1520px;margin:0 auto;padding:14px}
+header{text-align:center;padding:16px 0;border-bottom:1px solid #1e293b;margin-bottom:16px}
+h1{font-size:1.7rem;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{color:#475569;font-size:.92rem;margin-top:4px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:1000px){.grid{grid-template-columns:1fr}}
+.card{background:#111827;border-radius:12px;padding:18px;border:1px solid #1e293b}
+.card h2{font-size:1.05rem;margin-bottom:12px;color:#94a3b8;display:flex;align-items:center;gap:8px}
+.upload-zone{border:2px dashed #334155;border-radius:10px;padding:30px;text-align:center;cursor:pointer;transition:all .3s;background:#0a0e17}
+.upload-zone:hover,.upload-zone.dragover{border-color:#3b82f6;background:#111827}
+.upload-zone input{display:none}
+.upload-zone .icon{font-size:2.2rem;margin-bottom:6px}
+.upload-zone p{font-size:.9rem}
+.upload-zone .sub{font-size:.78rem;color:#475569;margin-top:4px}
+.canvas-wrap{position:relative;background:#0a0e17;border-radius:8px;overflow:hidden;border:1px solid #1e293b;display:inline-block;user-select:none;touch-action:none}
+canvas{display:block;cursor:crosshair}
+.controls{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
+button{background:#2563eb;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:500;transition:all .2s}
+button:hover{background:#1d4ed8}
+button.secondary{background:#374151}
+button.secondary:hover{background:#4b5563}
+button.success{background:#059669}
+button.success:hover{background:#047857}
+button.danger{background:#dc2626}
+button.danger:hover{background:#b91c1c}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.small{padding:5px 10px;font-size:.78rem}
+.detect-panel{background:#0a0e17;border-radius:8px;padding:14px;border:1px solid #1e293b;margin-top:12px}
+.detect-panel h3{font-size:.95rem;color:#e2e8f0;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.detect-panel .detect-count{background:#1e3a5f;color:#60a5fa;padding:2px 8px;border-radius:10px;font-size:.75rem}
+.detect-list{max-height:320px;overflow-y:auto}
+.detect-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#111827;border-radius:8px;margin-bottom:8px;border:1px solid #1e293b;cursor:pointer;transition:all .2s}
+.detect-item:hover{border-color:#3b82f6;background:#1e293b}
+.detect-item.selected{border-color:#10b981;background:#064e3b15}
+.detect-item input[type=checkbox]{width:18px;height:18px;accent-color:#10b981;cursor:pointer;flex-shrink:0}
+.detect-item .detect-preview{width:48px;height:36px;border-radius:4px;border:1px solid #334155;background:#0a0e17;flex-shrink:0;object-fit:contain}
+.detect-item .detect-info{flex:1;min-width:0}
+.detect-item .detect-info .name{font-size:.88rem;color:#e2e8f0;font-weight:500}
+.detect-item .detect-info .meta{font-size:.75rem;color:#64748b;margin-top:2px}
+.detect-item .detect-type{font-size:.7rem;padding:2px 8px;border-radius:10px;font-weight:600;flex-shrink:0}
+.type-text{background:#1e3a5f;color:#60a5fa}
+.type-image{background:#3f1e5f;color:#c084fc}
+.type-icon{background:#1e3a1e;color:#4ade80}
+.type-signature{background:#5f1e1e;color:#f87171}
+.detect-actions{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #1e293b}
+.field-list{max-height:380px;overflow-y:auto}
+.field-card{background:#0a0e17;border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid #1e293b;border-left:3px solid #3b82f6}
+.field-card.selected{border-left-color:#10b981;background:#064e3b12}
+.field-card .field-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.field-card .field-header strong{color:#60a5fa;min-width:18px}
+.field-card input[type=text]{flex:1;min-width:80px;background:#1e293b;border:1px solid #334155;color:#fff;padding:5px 10px;border-radius:5px;font-size:.85rem}
+.field-card .field-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.field-card .field-grid>div{display:flex;align-items:center;gap:5px}
+.field-card label{font-size:.74rem;color:#64748b;white-space:nowrap}
+.field-card input[type=number]{width:52px;background:#1e293b;border:1px solid #334155;color:#fff;padding:4px;border-radius:5px;font-size:.8rem}
+.field-card input[type=color]{width:32px;height:24px;border:none;border-radius:4px;cursor:pointer}
+.field-card .actions{display:flex;gap:5px;margin-top:8px}
+.field-card .actions button{padding:4px 8px;font-size:.75rem}
+.field-card .clean-toggle{display:flex;align-items:center;gap:5px;font-size:.76rem;color:#94a3b8}
+.field-card .clean-toggle input{width:14px;height:14px}
+.spreadsheet{overflow-x:auto;margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:.84rem;min-width:500px}
+th,td{padding:7px 9px;text-align:left;border:1px solid #1e293b}
+th{background:#111827;color:#94a3b8;font-weight:600;position:sticky;top:0}
+td{background:#0a0e17}
+td input{width:100%;background:transparent;border:none;color:#e2e8f0;padding:3px;font-size:.84rem}
+td input:focus{outline:2px solid #2563eb;border-radius:3px}
+.row-actions{display:flex;gap:3px}
+.row-actions button{padding:3px 6px;font-size:.7rem}
+.progress-container{display:none;margin-top:14px;padding:14px;background:#111827;border-radius:10px;border:1px solid #1e293b}
+.progress-bar{width:100%;height:16px;background:#1e293b;border-radius:8px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;background:linear-gradient(90deg,#2563eb,#7c3aed);width:0%;transition:width .3s;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:14px}
+.gallery-item{background:#111827;border-radius:10px;overflow:hidden;border:1px solid #1e293b;transition:transform .2s;position:relative}
+.gallery-item:hover{transform:scale(1.02)}
+.gallery-item img{width:100%;height:130px;object-fit:cover;display:block}
+.gallery-item .info{padding:7px;font-size:.75rem;color:#64748b}
+.gallery-item .dl-btn{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.75);color:#fff;border:none;padding:4px 7px;border-radius:5px;cursor:pointer;font-size:.7rem}
+.instructions{background:#111827;border-left:3px solid #2563eb;padding:12px;border-radius:0 8px 8px 0;margin-bottom:14px;font-size:.85rem;line-height:1.6;color:#94a3b8}
+.instructions code{background:#0a0e17;padding:2px 5px;border-radius:4px;font-family:monospace;color:#60a5fa}
+.instructions strong{color:#e2e8f0}
+.hidden{display:none!important}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7rem;font-weight:600}
+.badge-blue{background:#1e3a5f;color:#60a5fa}
+.badge-green{background:#064e3b;color:#34d399}
+.badge-purple{background:#3f1e5f;color:#c084fc}
+.badge-amber{background:#5f3f1e;color:#fbbf24}
+.mode-indicator{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.7);color:#fbbf24;padding:3px 10px;border-radius:5px;font-size:.75rem;font-weight:600;pointer-events:none;z-index:10}
+.hint-bar{background:#1e3a5f;color:#93c5fd;padding:7px 12px;border-radius:6px;font-size:.8rem;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.empty-state{color:#475569;text-align:center;padding:24px;font-size:.88rem}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:2000}
+.modal-overlay.active{display:flex}
+.modal{background:#111827;border-radius:14px;padding:18px;max-width:90vw;max-height:90vh;overflow:auto;border:1px solid #1e293b}
+.modal h3{margin-bottom:12px;color:#e2e8f0}
+.modal canvas{max-width:100%;border-radius:6px;border:1px solid #1e293b}
+.modal .close-btn{float:right;background:#374151;padding:5px 12px;font-size:.78rem}
+.img-cell{display:flex;align-items:center;gap:6px}
+.img-cell img{height:28px;width:28px;object-fit:cover;border-radius:4px;border:1px solid #334155}
+.img-cell .img-name{font-size:.75rem;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px}
+.img-cell button{background:#374151;padding:3px 8px;font-size:.7rem}
+.template-saved{background:#064e3b;color:#34d399;padding:6px 12px;border-radius:6px;font-size:.8rem;margin-top:8px;display:none;align-items:center;gap:6px}
+.template-saved.active{display:flex}
+.gemini-status{padding:4px 10px;border-radius:10px;font-size:.72rem;font-weight:600;margin-left:auto}
+.gemini-on{background:#064e3b;color:#34d399}
+.gemini-off{background:#5f1e1e;color:#f87171}
+.api-key-input{background:#1e293b;border:1px solid #334155;color:#fff;padding:6px 10px;border-radius:5px;font-size:.8rem;width:280px}
+.settings-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.loading-spinner{display:inline-block;width:14px;height:14px;border:2px solid #334155;border-top-color:#60a5fa;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.merge-slider{width:120px}
+.confidence-badge{font-size:.65rem;padding:1px 6px;border-radius:8px;margin-left:4px}
+.conf-high{background:#064e3b;color:#34d399}
+.conf-med{background:#5f3f1e;color:#fbbf24}
+.conf-low{background:#5f1e1e;color:#f87171}
+.template-selector{background:#0a0e17;border:1px solid #1e293b;border-radius:8px;padding:12px;margin-top:10px}
+.template-item{display:flex;align-items:center;justify-content:space-between;padding:8px;background:#111827;border-radius:6px;margin-bottom:6px;border:1px solid #1e293b;cursor:pointer}
+.template-item:hover{border-color:#3b82f6}
+.template-item .name{font-size:.85rem;color:#e2e8f0}
+.template-item .date{font-size:.7rem;color:#64748b}
+.template-item .actions{display:flex;gap:5px}
+.status-msg{padding:8px 12px;border-radius:6px;font-size:.85rem;margin-top:8px;display:none}
+.status-msg.show{display:block}
+.status-success{background:#064e3b;color:#34d399}
+.status-error{background:#5f1e1e;color:#f87171}
+.status-info{background:#1e3a5f;color:#60a5fa}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>AutoDetect Template Filler</h1>
+<p class="subtitle">Vercel-hosted • Gemini Vision • Cloud Storage • Multi-Template Support</p>
+</header>
+
+<div class="instructions">
+<strong>Workflow:</strong>
+<ol style="margin-left:18px;margin-top:4px">
+<li>Upload a template image (stored in Vercel Blob cloud)</li>
+<li>Click <strong>Auto-Detect with Gemini</strong> for intelligent field recognition</li>
+<li><strong>Tick checkboxes</strong> to select fields you want</li>
+<li>Click <strong>Apply Selected</strong> — they become spreadsheet columns</li>
+<li><strong>Drag</strong> boxes to move. <strong>Drag green handles</strong> to resize</li>
+<li>Image fields accept image uploads in spreadsheet cells</li>
+<li>Fill data and <strong>Render All</strong></li>
+<li><strong>Save Template</strong> to cloud — access from anywhere, switch between templates</li>
+</ol>
+</div>
+
+<div class="card" style="margin-bottom:14px">
+<h2>🔧 Settings</h2>
+<div class="settings-row">
+<label style="font-size:.85rem;color:#94a3b8">Gemini API Key:</label>
+<input type="password" id="apiKeyInput" class="api-key-input" placeholder="Enter Gemini API Key..." value="AIzaSyCyD2IgrkRij6TbfV8we0KKHJxbviScJAc">
+<button onclick="testApiKey()" class="small secondary">Test</button>
+<span class="gemini-status gemini-off" id="geminiStatus">Not Connected</span>
+</div>
+<div class="settings-row">
+<label style="font-size:.85rem;color:#94a3b8">Text Merge Distance:</label>
+<input type="range" id="mergeDistance" class="merge-slider" min="20" max="150" value="60">
+<span id="mergeValue" style="font-size:.8rem;color:#60a5fa;min-width:30px">60px</span>
+<label style="font-size:.85rem;color:#94a3b8;margin-left:20px">Min Field Size:</label>
+<input type="range" id="minFieldSize" class="merge-slider" min="20" max="100" value="30">
+<span id="minSizeValue" style="font-size:.8rem;color:#60a5fa;min-width:30px">30px</span>
+</div>
+</div>
+
+<div class="grid">
+<div>
+<div class="card">
+<h2>Upload Template</h2>
+<div class="upload-zone" id="uploadZone">
+<input type="file" id="imageInput" accept="image/*">
+<div class="icon">📁</div>
+<p>Drop image or click to browse</p>
+<p class="sub">JPG, PNG, WEBP, GIF — Stored in Vercel Blob</p>
+</div>
+<div class="canvas-wrap hidden" id="canvasWrap" style="margin-top:12px">
+<div class="mode-indicator" id="modeIndicator">Click "Auto-Detect" to find fields</div>
+<canvas id="templateCanvas"></canvas>
+</div>
+<div class="controls">
+<button onclick="autoDetectWithGemini()" id="autoDetectBtn" disabled>
+<span id="detectBtnText">Auto-Detect with Gemini</span>
+</button>
+<button onclick="autoDetectFallback()" class="secondary" id="fallbackBtn" disabled>Fallback (Local)</button>
+<button onclick="addManualField()" class="secondary" id="manualAddBtn" disabled>Add Manual</button>
+<button onclick="clearAllFields()" class="danger">Clear All</button>
+<button onclick="previewClean()" class="secondary" id="previewCleanBtn" disabled>Preview Clean</button>
+</div>
+<div class="template-saved" id="templateSaved">
+<span>✓</span> Template saved to cloud!
+</div>
+<div class="controls" style="margin-top:8px">
+<button onclick="saveTemplate()" class="success" id="saveTemplateBtn" disabled>💾 Save Template</button>
+<button onclick="createNewTemplate()" class="secondary">🆕 New Template</button>
+</div>
+<div class="status-msg" id="statusMsg"></div>
+</div>
+
+<div class="card" style="margin-top:14px">
+<h2>📋 Your Templates</h2>
+<div class="hint-bar">Switch between saved templates. Each template keeps its own image, fields, and data.</div>
+<div class="template-selector" id="templateSelector">
+<div class="empty-state" style="padding:12px">No saved templates yet. Upload an image and save your first template.</div>
+</div>
+<div class="controls" style="margin-top:8px">
+<button onclick="refreshTemplateList()" class="small secondary">🔄 Refresh List</button>
+</div>
+</div>
+
+<div class="card" style="margin-top:14px">
+<h2>Detected Regions <span class="detect-count" id="detectCount">0 found</span></h2>
+<div class="hint-bar" id="detectHint">Upload an image and click Auto-Detect with Gemini.</div>
+<div class="detect-list" id="detectList">
+<div class="empty-state">No detections yet.</div>
+</div>
+<div class="detect-actions" id="detectActions" style="display:none">
+<button onclick="selectAllDetections()" class="small">Select All</button>
+<button onclick="deselectAllDetections()" class="small secondary">Deselect All</button>
+<button onclick="applySelectedDetections()" class="success small">Apply Selected</button>
+</div>
+</div>
+</div>
+
+<div>
+<div class="card">
+<h2>Selected Fields (<span id="fieldCount">0</span>) <span class="badge badge-green">Active</span></h2>
+<div class="hint-bar" id="fieldHint">Select fields from detection results. Only selected fields appear here and in the spreadsheet.</div>
+<div class="field-list" id="fieldList">
+<div class="empty-state">No fields selected yet.</div>
+</div>
+</div>
+
+<div class="card" style="margin-top:14px">
+<h2>Data Spreadsheet</h2>
+<div class="controls" style="margin-bottom:12px">
+<button onclick="addRow()">Add Row</button>
+<button onclick="deleteLastRow()" class="danger">Remove Last</button>
+<button onclick="exportToExcel()" class="success">Excel</button>
+<button onclick="importFromExcel()" class="secondary">Import</button>
+<input type="file" id="excelInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleExcelImport(this)">
+</div>
+<div class="spreadsheet">
+<table id="dataTable">
+<thead><tr id="headerRow"><th>#</th><th>Actions</th></tr></thead>
+<tbody id="tableBody"></tbody>
+</table>
+</div>
+</div>
+
+<div class="card" style="margin-top:14px">
+<h2>Render Output</h2>
+<div class="controls">
+<button onclick="renderAll()" class="success" style="font-size:.95rem;padding:11px 22px">Render All</button>
+<button onclick="downloadAll()" class="secondary" id="downloadBtn" disabled>Download All</button>
+<button onclick="clearGallery()" class="danger">Clear Gallery</button>
+</div>
+<div class="progress-container" id="progressContainer">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<span id="progressText">Rendering...</span><span id="progressPercent">0%</span>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="progressFill">0%</div></div>
+</div>
+<div class="gallery" id="gallery"></div>
+</div>
+</div>
+</div>
+</div>
+
+<input type="file" id="cellImageInput" accept="image/*" style="display:none">
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
+<div class="modal" onclick="event.stopPropagation()">
+<button class="close-btn" onclick="closeModal()">Close</button>
+<h3>Clean Preview</h3>
+<canvas id="modalCanvas"></canvas>
+</div>
+</div>
+
+<script>
+// ==================== CONFIG ====================
+const API_BASE = '';
+
+// ==================== STATE ====================
+let templateImage = null, originalImageData = null;
+let detections = [];
+let detectionIdCounter = 0;
+let fields = [];
+let fieldIdCounter = 0;
+let renderedImages = [];
+let currentScale = 1;
+let isDragging = false, dragField = null, dragMode = null;
+let dragStartX = 0, dragStartY = 0, dragStartField = null;
+const HANDLE_SIZE = 10;
+let pendingImageCell = null;
+let currentTemplateId = null;
+let currentImageUrl = null;
+let geminiAvailable = false;
+
+const canvas = document.getElementById('templateCanvas');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const cellImageInput = document.getElementById('cellImageInput');
+
+// ==================== SETTINGS ====================
+const apiKeyInput = document.getElementById('apiKeyInput');
+const mergeDistanceSlider = document.getElementById('mergeDistance');
+const minFieldSizeSlider = document.getElementById('minFieldSize');
+
+mergeDistanceSlider.addEventListener('input', e => {
+  document.getElementById('mergeValue').textContent = e.target.value + 'px';
+});
+minFieldSizeSlider.addEventListener('input', e => {
+  document.getElementById('minSizeValue').textContent = e.target.value + 'px';
+});
+
+async function testApiKey() {
+  const key = apiKeyInput.value.trim();
+  if (!key) { alert('Please enter an API key'); return; }
+  const status = document.getElementById('geminiStatus');
+  status.textContent = 'Testing...';
+  status.className = 'gemini-status';
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: 'Hi' }] }] })
+    });
+    if (res.ok) {
+      status.textContent = 'Gemini Connected';
+      status.className = 'gemini-status gemini-on';
+      geminiAvailable = true;
+    } else {
+      status.textContent = 'Invalid Key';
+      status.className = 'gemini-status gemini-off';
+      geminiAvailable = false;
+    }
+  } catch (e) {
+    status.textContent = 'Connection Failed';
+    status.className = 'gemini-status gemini-off';
+    geminiAvailable = false;
+  }
+}
+
+if (apiKeyInput.value.trim()) testApiKey();
+
+function showStatus(msg, type) {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'status-msg show status-' + type;
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ==================== UPLOAD TO VERCEL BLOB ====================
+const uploadZone = document.getElementById('uploadZone');
+const imageInput = document.getElementById('imageInput');
+uploadZone.addEventListener('click', () => imageInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover') });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]?.type.startsWith('image/')) handleImageUpload(e.dataTransfer.files[0]);
+});
+imageInput.addEventListener('change', e => { if (e.target.files[0]) handleImageUpload(e.target.files[0]) });
+
+async function handleImageUpload(file) {
+  const templateId = 'template_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  showStatus('Uploading image to cloud storage...', 'info');
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('templateId', templateId);
+
+    const response = await fetch(API_BASE + '/api/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) throw new Error('Upload failed');
+    const data = await response.json();
+
+    currentTemplateId = data.templateId;
+    currentImageUrl = data.url;
+
+    showStatus('Image uploaded! Loading...', 'success');
+
+    templateImage = new Image();
+    templateImage.crossOrigin = 'anonymous';
+    templateImage.onload = () => {
+      canvas.width = templateImage.width;
+      canvas.height = templateImage.height;
+      currentScale = Math.min(560 / templateImage.width, 1);
+      canvas.style.width = (templateImage.width * currentScale) + 'px';
+      canvas.style.height = (templateImage.height * currentScale) + 'px';
+      ctx.drawImage(templateImage, 0, 0);
+      originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      drawCanvas();
+
+      document.getElementById('uploadZone').classList.add('hidden');
+      document.getElementById('canvasWrap').classList.remove('hidden');
+      document.getElementById('autoDetectBtn').disabled = false;
+      document.getElementById('fallbackBtn').disabled = false;
+      document.getElementById('manualAddBtn').disabled = false;
+      document.getElementById('previewCleanBtn').disabled = false;
+      document.getElementById('saveTemplateBtn').disabled = false;
+      document.getElementById('modeIndicator').textContent = 'Ready - click Auto-Detect';
+      document.getElementById('detectHint').innerHTML = 'Image uploaded to cloud. Click <strong>Auto-Detect with Gemini</strong>.';
+
+      clearAllFields();
+      refreshTemplateList();
+    };
+    templateImage.src = data.url;
+
+  } catch (error) {
+    showStatus('Upload failed: ' + error.message, 'error');
+    console.error('Upload error:', error);
+  }
+}
+
+// ==================== GEMINI DETECTION VIA API ====================
+async function autoDetectWithGemini() {
+  if (!templateImage) { alert('Upload an image first'); return; }
+  if (!geminiAvailable) {
+    alert('Gemini not connected. Testing API key first...');
+    await testApiKey();
+    if (!geminiAvailable) { alert('Please enter a valid Gemini API key'); return; }
+  }
+  if (!currentImageUrl) { alert('Image not uploaded to cloud yet'); return; }
+
+  const btn = document.getElementById('autoDetectBtn');
+  const btnText = document.getElementById('detectBtnText');
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="loading-spinner"></span> Analyzing with Gemini...';
+  document.getElementById('modeIndicator').textContent = 'Gemini Vision analyzing...';
+
+  try {
+    const response = await fetch(API_BASE + '/api/detect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        imageUrl: currentImageUrl,
+        apiKey: apiKeyInput.value.trim(),
+        imageWidth: canvas.width,
+        imageHeight: canvas.height
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Detection failed');
+    }
+
+    const data = await response.json();
+
+    detections = data.detections || [];
+    detectionIdCounter = detections.length;
+
+    mergeNearbyTextFields();
+    renderDetections();
+    document.getElementById('modeIndicator').textContent = 'Gemini found ' + detections.length + ' fields';
+    document.getElementById('detectHint').innerHTML = 'Gemini detected <strong>' + detections.length + '</strong> fields. Review and select.';
+    drawCanvas();
+    showStatus('Detected ' + detections.length + ' fields with Gemini AI', 'success');
+
+  } catch (err) {
+    console.error('Gemini detection failed:', err);
+    showStatus('Gemini failed: ' + err.message + '. Falling back...', 'error');
+    autoDetectFallback();
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = 'Auto-Detect with Gemini';
+  }
+}
+
+// ==================== MERGE NEARBY TEXT FIELDS ====================
+function mergeNearbyTextFields() {
+  const mergeDist = parseInt(mergeDistanceSlider.value);
+  const minSize = parseInt(minFieldSizeSlider.value);
+  const textDets = detections.filter(d => d.type === 'text');
+  const otherDets = detections.filter(d => d.type !== 'text');
+
+  textDets.sort((a, b) => a.y === b.y ? a.x - b.x : a.y - b.y);
+
+  const merged = [];
+  const used = new Set();
+
+  for (let i = 0; i < textDets.length; i++) {
+    if (used.has(i)) continue;
+    let group = [textDets[i]];
+    used.add(i);
+
+    for (let j = i + 1; j < textDets.length; j++) {
+      if (used.has(j)) continue;
+      const a = group[group.length - 1];
+      const b = textDets[j];
+      const sameLine = Math.abs(a.y - b.y) < Math.max(a.h, b.h) * 0.8;
+      const closeX = b.x - (a.x + a.w) < mergeDist;
+      const verticalOverlap = !(b.y > a.y + a.h || b.y + b.h < a.y);
+
+      if (sameLine && closeX && verticalOverlap) {
+        group.push(b);
+        used.add(j);
+      }
+    }
+
+    if (group.length === 1) {
+      merged.push(group[0]);
+    } else {
+      const minX = Math.min(...group.map(g => g.x));
+      const minY = Math.min(...group.map(g => g.y));
+      const maxX = Math.max(...group.map(g => g.x + g.w));
+      const maxY = Math.max(...group.map(g => g.y + g.h));
+      const name = group.map(g => g.name).join(' ').replace(/\s+/g, ' ').trim();
+      merged.push({
+        id: detectionIdCounter++,
+        x: minX, y: minY, w: maxX - minX, h: maxY - minY,
+        type: 'text',
+        name: name || 'text_field',
+        confidence: 'high',
+        selected: false,
+        gemini: true,
+        merged: true
+      });
+    }
+  }
+
+  const filtered = merged.filter(d => d.w >= minSize && d.h >= minSize / 2);
+  detections = [...filtered, ...otherDets];
+}
+
+// ==================== FALLBACK LOCAL DETECTION ====================
+function autoDetectFallback() {
+  if (!templateImage) return;
+  detections = [];
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imgData.data;
+  const w = canvas.width, h = canvas.height;
+
+  const gray = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      gray[y * w + x] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    }
+  }
+
+  const edges = new Float32Array(w * h);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const idx = y * w + x;
+      const gx = -gray[idx - w - 1] - 2 * gray[idx - 1] - gray[idx + w - 1] + gray[idx - w + 1] + 2 * gray[idx + 1] + gray[idx + w + 1];
+      const gy = -gray[idx - w - 1] - 2 * gray[idx - w] - gray[idx - w + 1] + gray[idx + w - 1] + 2 * gray[idx + w] + gray[idx + w + 1];
+      edges[idx] = Math.sqrt(gx * gx + gy * gy);
+    }
+  }
+
+  const edgeBinary = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    edgeBinary[i] = edges[i] > 35 ? 1 : 0;
+  }
+
+  const dilated = new Uint8Array(w * h);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      let hasEdge = false;
+      for (let dy = -1; dy <= 1 && !hasEdge; dy++) {
+        for (let dx = -1; dx <= 1 && !hasEdge; dx++) {
+          if (edgeBinary[(y + dy) * w + (x + dx)]) hasEdge = true;
+        }
+      }
+      dilated[y * w + x] = hasEdge ? 1 : 0;
+    }
+  }
+
+  const visited = new Set();
+  const rawRegions = [];
+  for (let y = 0; y < h; y += 3) {
+    for (let x = 0; x < w; x += 3) {
+      if (dilated[y * w + x] && !visited.has(y * w + x)) {
+        const q = [[x, y]];
+        visited.add(y * w + x);
+        let minX = x, maxX = x, minY = y, maxY = y, count = 0;
+        while (q.length && count < 8000) {
+          const [cx, cy] = q.shift();
+          count++;
+          minX = Math.min(minX, cx); maxX = Math.max(maxX, cx);
+          minY = Math.min(minY, cy); maxY = Math.max(maxY, cy);
+          for (let dy = -3; dy <= 3; dy++) {
+            for (let dx = -3; dx <= 3; dx++) {
+              const nx = cx + dx, ny = cy + dy;
+              if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                const key = ny * w + nx;
+                if (dilated[key] && !visited.has(key)) { visited.add(key); q.push([nx, ny]); }
+              }
+            }
+          }
+        }
+        const area = (maxX - minX) * (maxY - minY);
+        const aspect = (maxX - minX) / (maxY - minY || 1);
+        if (area > 120 && area < w * h * 0.06 && (maxX - minX) > 15 && (maxY - minY) > 8 && aspect > 0.15 && aspect < 8) {
+          rawRegions.push({ x: minX, y: minY, w: maxX - minX, h: maxY - minY });
+        }
+      }
+    }
+  }
+
+  const merged = [];
+  rawRegions.forEach(r => {
+    const nearby = merged.find(m => {
+      const dx = Math.abs((m.x + m.w / 2) - (r.x + r.w / 2));
+      const dy = Math.abs((m.y + m.h / 2) - (r.y + r.h / 2));
+      return dx < 80 && dy < 50;
+    });
+    if (nearby) {
+      nearby.x = Math.min(nearby.x, r.x);
+      nearby.y = Math.min(nearby.y, r.y);
+      nearby.w = Math.max(nearby.x + nearby.w, r.x + r.w) - nearby.x;
+      nearby.h = Math.max(nearby.y + nearby.h, r.y + r.h) - nearby.y;
+    } else { merged.push({ x: r.x, y: r.y, w: r.w + 6, h: r.h + 6 }); }
+  });
+
+  merged.forEach((r, i) => {
+    const analysis = analyzeRegion(r.x, r.y, r.w, r.h, data, w, h);
+    const type = analysis.isImageLike ? 'image' : (analysis.isIconLike ? 'icon' : 'text');
+    detections.push({
+      id: detectionIdCounter++,
+      x: Math.max(0, r.x - 3), y: Math.max(0, r.y - 3),
+      w: Math.min(r.w + 6, w - Math.max(0, r.x - 3)),
+      h: Math.min(r.h + 6, h - Math.max(0, r.y - 3)),
+      type: type,
+      name: type === 'image' ? ('photo_' + (i + 1)) : (type === 'icon' ? ('icon_' + (i + 1)) : ('field_' + (i + 1))),
+      confidence: analysis.confidence,
+      selected: false,
+      gemini: false
+    });
+  });
+
+  mergeNearbyTextFields();
+  renderDetections();
+  document.getElementById('modeIndicator').textContent = 'Local detection: ' + detections.length + ' fields';
+  document.getElementById('detectHint').innerHTML = 'Local detection found <strong>' + detections.length + '</strong> fields.';
+  drawCanvas();
+}
+
+function analyzeRegion(x, y, w, h, data, imgW, imgH) {
+  let pixelCount = 0, avgR = 0, avgG = 0, avgB = 0;
+  let colorVar = 0;
+  const samples = [];
+
+  for (let py = y; py < y + h; py += Math.max(1, Math.floor(h / 8))) {
+    for (let px = x; px < x + w; px += Math.max(1, Math.floor(w / 8))) {
+      const i = (py * imgW + px) * 4;
+      if (i >= data.length - 3) continue;
+      samples.push({ r: data[i], g: data[i + 1], b: data[i + 2] });
+      avgR += data[i]; avgG += data[i + 1]; avgB += data[i + 2];
+      pixelCount++;
+    }
+  }
+
+  if (pixelCount === 0) return { isImageLike: false, isIconLike: false, confidence: 'low' };
+  avgR /= pixelCount; avgG /= pixelCount; avgB /= pixelCount;
+
+  for (const s of samples) {
+    colorVar += Math.abs(s.r - avgR) + Math.abs(s.g - avgG) + Math.abs(s.b - avgB);
+  }
+  colorVar /= samples.length;
+
+  const aspect = w / h;
+  const areaRatio = (w * h) / (imgW * imgH);
+
+  const isImageLike = colorVar > 60 && pixelCount > 200 && aspect > 0.3 && aspect < 3 && areaRatio > 0.005;
+  const isIconLike = areaRatio < 0.02 && aspect > 0.5 && aspect < 2 && colorVar < 40 && pixelCount < 500;
+
+  let confidence = 'medium';
+  if (isImageLike && colorVar > 100) confidence = 'high';
+  if (isIconLike && colorVar < 20) confidence = 'high';
+
+  return { isImageLike, isIconLike, confidence };
+}
+
+// ==================== DRAWING ====================
+function drawCanvas() {
+  if (originalImageData) ctx.putImageData(originalImageData, 0, 0);
+  else if (templateImage) ctx.drawImage(templateImage, 0, 0);
+
+  detections.forEach((det, i) => {
+    if (det.selected) return;
+    ctx.strokeStyle = 'rgba(148,163,184,0.4)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeRect(det.x, det.y, det.w, det.h);
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(148,163,184,0.06)';
+    ctx.fillRect(det.x, det.y, det.w, det.h);
+    ctx.fillStyle = 'rgba(148,163,184,0.6)';
+    ctx.font = '11px sans-serif';
+    ctx.fillText(String(i + 1), det.x + 2, det.y - 3);
+  });
+
+  fields.forEach((field, index) => {
+    const isSel = field.selected;
+    ctx.strokeStyle = isSel ? '#10b981' : '#3b82f6';
+    ctx.lineWidth = isSel ? 2.5 : 1.5;
+    ctx.setLineDash(isSel ? [] : [4, 3]);
+    ctx.strokeRect(field.x, field.y, field.w, field.h);
+    ctx.setLineDash([]);
+    ctx.fillStyle = isSel ? 'rgba(16,185,129,0.06)' : 'rgba(59,130,246,0.04)';
+    ctx.fillRect(field.x, field.y, field.w, field.h);
+    ctx.fillStyle = isSel ? '#10b981' : '#3b82f6';
+    ctx.font = 'bold ' + (isSel ? 12 : 11) + 'px sans-serif';
+    const label = (index + 1) + '. ' + field.name + (field.isImageField ? ' [IMG]' : '');
+    ctx.fillText(label, field.x, field.y - 14);
+    if (field.isImageField) {
+      ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 1;
+      ctx.strokeRect(field.x + field.w - 18, field.y + 2, 16, 16);
+      ctx.fillStyle = '#c084fc'; ctx.font = '10px sans-serif';
+      ctx.fillText('IMG', field.x + field.w - 16, field.y + 14);
+    }
+    ctx.strokeStyle = isSel ? '#10b981' : '#ef4444';
+    ctx.lineWidth = 1;
+    const cx = field.x + field.w / 2, cy = field.y + field.h / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, cy); ctx.lineTo(cx + 5, cy);
+    ctx.moveTo(cx, cy - 5); ctx.lineTo(cx, cy + 5);
+    ctx.stroke();
+    if (isSel) {
+      drawHandle(field.x, field.y);
+      drawHandle(field.x + field.w, field.y);
+      drawHandle(field.x, field.y + field.h);
+      drawHandle(field.x + field.w, field.y + field.h);
+      drawHandle(field.x + field.w / 2, field.y);
+      drawHandle(field.x + field.w / 2, field.y + field.h);
+      drawHandle(field.x, field.y + field.h / 2);
+      drawHandle(field.x + field.w, field.y + field.h / 2);
+    }
+  });
+}
+
+function drawHandle(x, y) {
+  ctx.fillStyle = '#10b981';
+  ctx.fillRect(x - HANDLE_SIZE / 2, y - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE);
+  ctx.strokeStyle = '#064e3b'; ctx.lineWidth = 1;
+  ctx.strokeRect(x - HANDLE_SIZE / 2, y - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE);
+}
+
+// ==================== DETECTION UI ====================
+function renderDetections() {
+  const list = document.getElementById('detectList');
+  const count = document.getElementById('detectCount');
+  count.textContent = detections.length + ' found';
+
+  if (detections.length === 0) {
+    list.innerHTML = '<div class="empty-state">No detections yet.</div>';
+    document.getElementById('detectActions').style.display = 'none';
+    return;
+  }
+
+  list.innerHTML = '';
+  detections.forEach((det, i) => {
+    const item = document.createElement('div');
+    item.className = 'detect-item' + (det.selected ? ' selected' : '');
+    item.onclick = e => { if (e.target.type !== 'checkbox') toggleDetection(det.id); };
+
+    const typeClass = 'type-' + det.type;
+    const confClass = det.confidence === 'high' ? 'conf-high' : (det.confidence === 'medium' ? 'conf-med' : 'conf-low');
+    const sourceIcon = det.gemini ? '🤖' : '🔧';
+
+    item.innerHTML = '<input type="checkbox" ' + (det.selected ? 'checked' : '') + ' onchange="toggleDetection(' + det.id + ')">' +
+      '<img class="detect-preview" src="' + getDetectionThumbnail(det) + '" alt="">' +
+      '<div class="detect-info">' +
+      '<div class="name">' + det.name + ' <span class="confidence-badge ' + confClass + '">' + det.confidence + '</span></div>' +
+      '<div class="meta">' + Math.round(det.w) + '×' + Math.round(det.h) + 'px at (' + det.x + ',' + det.y + ') ' + (det.merged ? '[merged]' : '') + '</div>' +
+      '</div>' +
+      '<span class="detect-type ' + typeClass + '">' + sourceIcon + ' ' + det.type + '</span>';
+    list.appendChild(item);
+  });
+
+  document.getElementById('detectActions').style.display = 'flex';
+}
+
+function getDetectionThumbnail(det) {
+  const pCanvas = document.createElement('canvas');
+  pCanvas.width = Math.min(det.w, 120);
+  pCanvas.height = Math.min(det.h, 90);
+  const pCtx = pCanvas.getContext('2d');
+  if (templateImage) {
+    pCtx.drawImage(templateImage, det.x, det.y, det.w, det.h, 0, 0, pCanvas.width, pCanvas.height);
+  }
+  return pCanvas.toDataURL();
+}
+
+function toggleDetection(id) {
+  const det = detections.find(d => d.id === id);
+  if (det) { det.selected = !det.selected; renderDetections(); drawCanvas(); }
+}
+
+function selectAllDetections() { detections.forEach(d => d.selected = true); renderDetections(); drawCanvas(); }
+function deselectAllDetections() { detections.forEach(d => d.selected = false); renderDetections(); drawCanvas(); }
+
+function applySelectedDetections() {
+  const selected = detections.filter(d => d.selected);
+  if (selected.length === 0) { alert('Select at least one detection'); return; }
+
+  selected.forEach(det => {
+    const exists = fields.find(f => Math.abs(f.x - det.x) < 5 && Math.abs(f.y - det.y) < 5);
+    if (exists) return;
+
+    fields.push({
+      id: fieldIdCounter++,
+      x: det.x, y: det.y, w: det.w, h: det.h,
+      name: det.name,
+      isImageField: det.type === 'image' || det.type === 'signature',
+      cleanBackground: det.type === 'text',
+      fontSize: Math.max(10, Math.min(24, Math.round(det.h * 0.55))),
+      fontColor: '#000000',
+      fontFamily: 'Arial',
+      selected: false,
+      source: det.gemini ? 'gemini' : 'local'
+    });
+  });
+
+  renderFields();
+  renderTable();
+  document.getElementById('fieldHint').innerHTML = '<strong>' + fields.length + '</strong> fields active. Click a field to select, drag to move, drag handles to resize.';
+  document.getElementById('saveTemplateBtn').disabled = false;
+}
+
+// ==================== FIELD UI ====================
+function renderFields() {
+  const list = document.getElementById('fieldList');
+  document.getElementById('fieldCount').textContent = fields.length;
+
+  if (fields.length === 0) {
+    list.innerHTML = '<div class="empty-state">No fields selected yet.</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  fields.forEach((field, idx) => {
+    const card = document.createElement('div');
+    card.className = 'field-card' + (field.selected ? ' selected' : '');
+    card.innerHTML = '<div class="field-header">' +
+      '<strong>' + (idx + 1) + '</strong>' +
+      '<input type="text" value="' + field.name + '" onchange="updateField(' + field.id + ','name',this.value)">' +
+      '<span class="badge ' + (field.isImageField ? 'badge-purple' : 'badge-blue') + '">' + (field.isImageField ? 'IMAGE' : 'TEXT') + '</span>' +
+      (field.source === 'gemini' ? '<span class="badge badge-green">🤖 AI</span>' : '') +
+      '</div>' +
+      '<div class="field-grid">' +
+      '<div><label>Font</label><input type="number" value="' + field.fontSize + '" onchange="updateField(' + field.id + ','fontSize',parseInt(this.value))"></div>' +
+      '<div><label>Color</label><input type="color" value="' + field.fontColor + '" onchange="updateField(' + field.id + ','fontColor',this.value)"></div>' +
+      '<div><label>Family</label><input type="text" value="' + field.fontFamily + '" onchange="updateField(' + field.id + ','fontFamily',this.value)" style="width:70px;font-size:.75rem"></div>' +
+      '</div>' +
+      '<div class="clean-toggle">' +
+      '<input type="checkbox" ' + (field.cleanBackground ? 'checked' : '') + ' onchange="updateField(' + field.id + ','cleanBackground',this.checked)">' +
+      '<span>Clean background when rendering</span>' +
+      '</div>' +
+      '<div class="actions">' +
+      '<button onclick="selectField(' + field.id + ')" class="small">Select</button>' +
+      '<button onclick="toggleImageField(' + field.id + ')" class="small secondary">' + (field.isImageField ? 'Text' : 'Image') + '</button>' +
+      '<button onclick="deleteField(' + field.id + ')" class="small danger">Delete</button>' +
+      '</div>';
+    list.appendChild(card);
+  });
+}
+
+function updateField(id, key, val) {
+  const f = fields.find(x => x.id === id);
+  if (f) { f[key] = val; drawCanvas(); }
+}
+
+function selectField(id) {
+  fields.forEach(f => f.selected = (f.id === id));
+  renderFields(); drawCanvas();
+}
+
+function toggleImageField(id) {
+  const f = fields.find(x => x.id === id);
+  if (f) { f.isImageField = !f.isImageField; renderFields(); drawCanvas(); }
+}
+
+function deleteField(id) {
+  fields = fields.filter(f => f.id !== id);
+  renderFields(); renderTable(); drawCanvas();
+}
+
+function addManualField() {
+  if (!templateImage) { alert('Upload image first'); return; }
+  fields.push({
+    id: fieldIdCounter++,
+    x: 50, y: 50, w: 150, h: 40,
+    name: 'field_' + fields.length,
+    isImageField: false,
+    cleanBackground: true,
+    fontSize: 16, fontColor: '#000000', fontFamily: 'Arial',
+    selected: true
+  });
+  fields.forEach((f, i) => f.selected = (i === fields.length - 1));
+  renderFields(); renderTable(); drawCanvas();
+}
+
+function clearAllFields() {
+  fields = []; detections = []; renderedImages = [];
+  renderFields(); renderDetections(); renderTable(); clearGallery(); drawCanvas();
+  document.getElementById('fieldHint').textContent = 'Select fields from detection results.';
+  document.getElementById('detectHint').textContent = 'Upload an image and click Auto-Detect.';
+}
+
+// ==================== CANVAS INTERACTION ====================
+function getMousePos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY
+  };
+}
+
+function getHandleAt(x, y, field) {
+  const handles = [
+    { hx: field.x, hy: field.y, mode: 'nw' },
+    { hx: field.x + field.w, hy: field.y, mode: 'ne' },
+    { hx: field.x, hy: field.y + field.h, mode: 'sw' },
+    { hx: field.x + field.w, hy: field.y + field.h, mode: 'se' },
+    { hx: field.x + field.w / 2, hy: field.y, mode: 'n' },
+    { hx: field.x + field.w / 2, hy: field.y + field.h, mode: 's' },
+    { hx: field.x, hy: field.y + field.h / 2, mode: 'w' },
+    { hx: field.x + field.w, hy: field.y + field.h / 2, mode: 'e' }
+  ];
+  for (const h of handles) {
+    if (Math.abs(x - h.hx) <= HANDLE_SIZE && Math.abs(y - h.hy) <= HANDLE_SIZE) return h.mode;
+  }
+  return null;
+}
+
+canvas.addEventListener('mousedown', e => {
+  const pos = getMousePos(e);
+  const selField = fields.find(f => f.selected);
+  if (selField) {
+    const handle = getHandleAt(pos.x, pos.y, selField);
+    if (handle) {
+      isDragging = true; dragField = selField; dragMode = handle;
+      dragStartX = pos.x; dragStartY = pos.y;
+      dragStartField = { ...selField };
+      return;
+    }
+  }
+  for (let i = fields.length - 1; i >= 0; i--) {
+    const f = fields[i];
+    if (pos.x >= f.x && pos.x <= f.x + f.w && pos.y >= f.y && pos.y <= f.y + f.h) {
+      fields.forEach(x => x.selected = false);
+      f.selected = true;
+      isDragging = true; dragField = f; dragMode = 'move';
+      dragStartX = pos.x; dragStartY = pos.y;
+      dragStartField = { ...f };
+      renderFields(); drawCanvas();
+      return;
+    }
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (!isDragging || !dragField) return;
+  const pos = getMousePos(e);
+  const dx = pos.x - dragStartX;
+  const dy = pos.y - dragStartY;
+
+  if (dragMode === 'move') {
+    dragField.x = Math.max(0, Math.min(canvas.width - dragField.w, dragStartField.x + dx));
+    dragField.y = Math.max(0, Math.min(canvas.height - dragField.h, dragStartField.y + dy));
+  } else {
+    if (dragMode.includes('e')) dragField.w = Math.max(20, dragStartField.w + dx);
+    if (dragMode.includes('s')) dragField.h = Math.max(10, dragStartField.h + dy);
+    if (dragMode.includes('w')) { const newW = Math.max(20, dragStartField.w - dx); dragField.x = dragStartField.x + dragStartField.w - newW; dragField.w = newW; }
+    if (dragMode.includes('n')) { const newH = Math.max(10, dragStartField.h - dy); dragField.y = dragStartField.y + dragStartField.h - newH; dragField.h = newH; }
+  }
+  drawCanvas();
+});
+
+canvas.addEventListener('mouseup', () => { isDragging = false; dragField = null; dragMode = null; });
+canvas.addEventListener('mouseleave', () => { isDragging = false; dragField = null; dragMode = null; });
+
+// ==================== TABLE ====================
+let tableData = [];
+
+function renderTable() {
+  const header = document.getElementById('headerRow');
+  header.innerHTML = '<th>#</th><th>Actions</th>';
+  fields.forEach(f => {
+    const th = document.createElement('th');
+    th.textContent = f.name + (f.isImageField ? ' 📷' : '');
+    header.appendChild(th);
+  });
+
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  tableData.forEach((row, ri) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + (ri + 1) + '</td><td class="row-actions"><button onclick="deleteRow(' + ri + ')" class="danger">Del</button></td>';
+    fields.forEach((f, fi) => {
+      const td = document.createElement('td');
+      if (f.isImageField) {
+        const val = row[fi] || '';
+        td.innerHTML = val ? '<div class="img-cell"><img src="' + val + '" alt=""><span class="img-name">img</span><button onclick="clearCellImage(' + ri + ',' + fi + ')">✕</button></div>' : '<button onclick="uploadCellImage(' + ri + ',' + fi + ')" class="small">+ Img</button>';
+      } else {
+        td.innerHTML = '<input type="text" value="' + (row[fi] || '') + '" onchange="updateCell(' + ri + ',' + fi + ',this.value)">';
+      }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+function addRow() {
+  tableData.push(new Array(fields.length).fill(''));
+  renderTable();
+}
+
+function deleteRow(idx) { tableData.splice(idx, 1); renderTable(); }
+function deleteLastRow() { if (tableData.length > 0) { tableData.pop(); renderTable(); } }
+function updateCell(r, c, v) { tableData[r][c] = v; }
+
+function uploadCellImage(r, c) {
+  pendingImageCell = { r, c };
+  cellImageInput.click();
+}
+
+cellImageInput.addEventListener('change', e => {
+  if (!pendingImageCell || !e.target.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    tableData[pendingImageCell.r][pendingImageCell.c] = ev.target.result;
+    renderTable();
+    pendingImageCell = null;
+    cellImageInput.value = '';
+  };
+  reader.readAsDataURL(e.target.files[0]);
+});
+
+function clearCellImage(r, c) { tableData[r][c] = ''; renderTable(); }
+
+// ==================== EXCEL ====================
+function exportToExcel() {
+  if (fields.length === 0 || tableData.length === 0) { alert('No data to export'); return; }
+  const wsData = [fields.map(f => f.name)];
+  tableData.forEach(row => wsData.push([...row]));
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data');
+  XLSX.writeFile(wb, 'template_data.xlsx');
+}
+
+function importFromExcel() { document.getElementById('excelInput').click(); }
+
+function handleExcelImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      if (json.length < 2) { alert('No data rows found'); return; }
+      const headers = json[0];
+      const fieldMap = {};
+      fields.forEach((f, i) => {
+        const hi = headers.findIndex(h => h && h.toString().trim() === f.name);
+        if (hi >= 0) fieldMap[i] = hi;
+      });
+      tableData = [];
+      for (let i = 1; i < json.length; i++) {
+        const row = new Array(fields.length).fill('');
+        Object.entries(fieldMap).forEach(([fi, hi]) => {
+          row[fi] = json[i][hi] || '';
+        });
+        tableData.push(row);
+      }
+      renderTable();
+    } catch (err) { alert('Import failed: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+  input.value = '';
+}
+
+// ==================== RENDERING ====================
+async function renderAll() {
+  if (!templateImage || fields.length === 0 || tableData.length === 0) { alert('Need template, fields, and data'); return; }
+  renderedImages = [];
+  const gallery = document.getElementById('gallery');
+  gallery.innerHTML = '';
+  const container = document.getElementById('progressContainer');
+  const fill = document.getElementById('progressFill');
+  const text = document.getElementById('progressText');
+  const pct = document.getElementById('progressPercent');
+  container.style.display = 'block';
+
+  for (let i = 0; i < tableData.length; i++) {
+    const progress = Math.round(((i + 1) / tableData.length) * 100);
+    fill.style.width = progress + '%';
+    fill.textContent = progress + '%';
+    text.textContent = 'Rendering ' + (i + 1) + ' of ' + tableData.length + '...';
+    pct.textContent = progress + '%';
+
+    const rc = document.createElement('canvas');
+    rc.width = canvas.width;
+    rc.height = canvas.height;
+    const rctx = rc.getContext('2d');
+    rctx.drawImage(templateImage, 0, 0);
+
+    for (let fi = 0; fi < fields.length; fi++) {
+      const f = fields[fi];
+      const val = tableData[i][fi] || '';
+      if (f.cleanBackground) {
+        rctx.fillStyle = '#ffffff';
+        rctx.fillRect(f.x, f.y, f.w, f.h);
+      }
+      if (f.isImageField && val) {
+        try {
+          const img = await loadImage(val);
+          const scale = Math.min(f.w / img.width, f.h / img.height);
+          const dw = img.width * scale, dh = img.height * scale;
+          rctx.drawImage(img, f.x + (f.w - dw) / 2, f.y + (f.h - dh) / 2, dw, dh);
+        } catch (e) { }
+      } else if (!f.isImageField) {
+        rctx.fillStyle = f.fontColor;
+        rctx.font = f.fontSize + 'px ' + f.fontFamily;
+        rctx.textBaseline = 'middle';
+        const lines = val.toString().split('\n');
+        const lineH = f.fontSize * 1.2;
+        const startY = f.y + (f.h - (lines.length - 1) * lineH) / 2;
+        lines.forEach((line, li) => {
+          rctx.fillText(line, f.x + 6, startY + li * lineH);
+        });
+      }
+    }
+
+    renderedImages.push(rc.toDataURL('image/png'));
+    const item = document.createElement('div');
+    item.className = 'gallery-item';
+    item.innerHTML = '<img src="' + rc.toDataURL('image/png') + '" alt=""><div class="info">Record ' + (i + 1) + '</div><button class="dl-btn" onclick="downloadImage(' + i + ')">Download</button>';
+    gallery.appendChild(item);
+
+    await new Promise(r => setTimeout(r, 10));
+  }
+
+  container.style.display = 'none';
+  document.getElementById('downloadBtn').disabled = false;
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+function downloadImage(idx) {
+  const a = document.createElement('a');
+  a.href = renderedImages[idx];
+  a.download = 'rendered_' + (idx + 1) + '.png';
+  a.click();
+}
+
+function downloadAll() {
+  renderedImages.forEach((_, i) => setTimeout(() => downloadImage(i), i * 200));
+}
+
+function clearGallery() {
+  renderedImages = [];
+  document.getElementById('gallery').innerHTML = '';
+  document.getElementById('downloadBtn').disabled = true;
+}
+
+// ==================== PREVIEW CLEAN ====================
+function previewClean() {
+  if (!templateImage || fields.length === 0) return;
+  const mc = document.getElementById('modalCanvas');
+  mc.width = canvas.width;
+  mc.height = canvas.height;
+  const mctx = mc.getContext('2d');
+  mctx.drawImage(templateImage, 0, 0);
+  fields.forEach(f => {
+    if (f.cleanBackground) {
+      mctx.fillStyle = '#ffffff';
+      mctx.fillRect(f.x, f.y, f.w, f.h);
+    }
+  });
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); }
+
+// ==================== TEMPLATE SAVE/LOAD (Cloud) ====================
+async function saveTemplate() {
+  if (!templateImage || fields.length === 0) { alert('Nothing to save. Upload image and add fields first.'); return; }
+  if (!currentTemplateId) { alert('No template ID. Upload an image first.'); return; }
+
+  showStatus('Saving template to cloud...', 'info');
+
+  const config = {
+    fields: fields.map(f => ({
+      id: f.id, x: f.x, y: f.y, w: f.w, h: f.h,
+      name: f.name, isImageField: f.isImageField,
+      cleanBackground: f.cleanBackground,
+      fontSize: f.fontSize, fontColor: f.fontColor,
+      fontFamily: f.fontFamily, source: f.source
+    })),
+    fieldIdCounter: fieldIdCounter,
+    tableData: tableData
+  };
+
+  try {
+    const response = await fetch(API_BASE + '/api/save-template', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        templateId: currentTemplateId,
+        imageUrl: currentImageUrl,
+        config: config
+      })
+    });
+
+    if (!response.ok) throw new Error('Save failed');
+
+    const saved = document.getElementById('templateSaved');
+    saved.classList.add('active');
+    setTimeout(() => saved.classList.remove('active'), 3000);
+    showStatus('Template saved to cloud successfully!', 'success');
+    refreshTemplateList();
+
+  } catch (error) {
+    showStatus('Save failed: ' + error.message, 'error');
+  }
+}
+
+async function loadSavedTemplate() {
+  if (!currentTemplateId) { alert('No template loaded. Select a template from the list or upload an image.'); return; }
+
+  showStatus('Loading template from cloud...', 'info');
+
+  try {
+    const response = await fetch(API_BASE + '/api/load-template?templateId=' + currentTemplateId);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        showStatus('No saved config found for this template. Save it first.', 'error');
+        return;
+      }
+      throw new Error('Load failed');
+    }
+
+    const data = await response.json();
+
+    if (data.config) {
+      fields = data.config.fields.map(f => ({ ...f, selected: false }));
+      fieldIdCounter = data.config.fieldIdCounter || fields.length;
+      tableData = data.config.tableData || [];
+
+      renderFields();
+      renderTable();
+      drawCanvas();
+
+      document.getElementById('fieldHint').innerHTML = '<strong>' + fields.length + '</strong> fields loaded from cloud.';
+      showStatus('Template loaded from cloud!', 'success');
+    }
+
+  } catch (error) {
+    showStatus('Load failed: ' + error.message, 'error');
+  }
+}
+
+async function refreshTemplateList() {
+  try {
+    const response = await fetch(API_BASE + '/api/list-templates');
+    const data = await response.json();
+
+    const selector = document.getElementById('templateSelector');
+
+    if (!data.templates || data.templates.length === 0) {
+      selector.innerHTML = '<div class="empty-state" style="padding:12px">No saved templates yet. Upload an image and save your first template.</div>';
+      return;
+    }
+
+    selector.innerHTML = '';
+    data.templates.forEach(t => {
+      const item = document.createElement('div');
+      item.className = 'template-item';
+      const date = new Date(t.updatedAt).toLocaleDateString();
+      item.innerHTML = '<div><div class="name">' + t.templateId + '</div><div class="date">' + date + '</div></div>' +
+        '<div class="actions"><button onclick="switchTemplate('' + t.templateId + '', '' + t.url + '')" class="small">Load</button></div>';
+      selector.appendChild(item);
+    });
+
+  } catch (error) {
+    console.error('Failed to refresh template list:', error);
+  }
+}
+
+async function switchTemplate(templateId, configUrl) {
+  showStatus('Switching to template: ' + templateId + '...', 'info');
+
+  try {
+    // Load the template config
+    const configResponse = await fetch(configUrl);
+    const templateData = await configResponse.json();
+
+    currentTemplateId = templateId;
+    currentImageUrl = templateData.imageUrl;
+
+    // Load the image
+    templateImage = new Image();
+    templateImage.crossOrigin = 'anonymous';
+    templateImage.onload = () => {
+      canvas.width = templateImage.width;
+      canvas.height = templateImage.height;
+      currentScale = Math.min(560 / templateImage.width, 1);
+      canvas.style.width = (templateImage.width * currentScale) + 'px';
+      canvas.style.height = (templateImage.height * currentScale) + 'px';
+      ctx.drawImage(templateImage, 0, 0);
+      originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      // Restore fields and data
+      if (templateData.config) {
+        fields = templateData.config.fields.map(f => ({ ...f, selected: false }));
+        fieldIdCounter = templateData.config.fieldIdCounter || fields.length;
+        tableData = templateData.config.tableData || [];
+      } else {
+        fields = [];
+        tableData = [];
+      }
+
+      document.getElementById('uploadZone').classList.add('hidden');
+      document.getElementById('canvasWrap').classList.remove('hidden');
+      document.getElementById('autoDetectBtn').disabled = false;
+      document.getElementById('fallbackBtn').disabled = false;
+      document.getElementById('manualAddBtn').disabled = false;
+      document.getElementById('previewCleanBtn').disabled = false;
+      document.getElementById('saveTemplateBtn').disabled = false;
+
+      renderFields();
+      renderTable();
+      drawCanvas();
+
+      showStatus('Switched to template: ' + templateId, 'success');
+    };
+    templateImage.src = templateData.imageUrl;
+
+  } catch (error) {
+    showStatus('Failed to switch template: ' + error.message, 'error');
+  }
+}
+
+function createNewTemplate() {
+  currentTemplateId = null;
+  currentImageUrl = null;
+  templateImage = null;
+  originalImageData = null;
+  fields = [];
+  detections = [];
+  tableData = [];
+  renderedImages = [];
+
+  document.getElementById('uploadZone').classList.remove('hidden');
+  document.getElementById('canvasWrap').classList.add('hidden');
+  document.getElementById('autoDetectBtn').disabled = true;
+  document.getElementById('fallbackBtn').disabled = true;
+  document.getElementById('manualAddBtn').disabled = true;
+  document.getElementById('previewCleanBtn').disabled = true;
+  document.getElementById('saveTemplateBtn').disabled = true;
+
+  renderFields();
+  renderDetections();
+  renderTable();
+  clearGallery();
+
+  showStatus('Created new template. Upload an image to begin.', 'info');
+}
+
+// Auto-refresh template list on load
+window.addEventListener('load', () => {
+  refreshTemplateList();
+});
+</script>
+</body>
+</html>
